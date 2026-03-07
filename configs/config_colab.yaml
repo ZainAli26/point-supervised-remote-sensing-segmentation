@@ -1,0 +1,89 @@
+# ============================================================
+# Configuration — Google Colab (T4 16GB / A100 40GB)
+# ============================================================
+# vs Local: batch 8 (not 2), resnet50 (not 34), more workers
+# Expected improvement: +3-5% mIoU from these changes alone
+# ============================================================
+# pCE Formula (from assignment slides):
+#   pCE = Sigma(FocalLoss(pred, GT) x MASK_labeled) / Sigma(MASK_labeled)
+# ============================================================
+
+data:
+  dataset_name: "WHDLD"
+  data_root: "data/WHDLD/VOCdevkit_9880/VOC2007"
+  image_dir: "data/WHDLD/VOCdevkit_9880/VOC2007/JPEGImages"
+  mask_dir: "data/WHDLD/VOCdevkit_9880/VOC2007/SegmentationClass"
+  train_split: "data/WHDLD/VOCdevkit_9880/VOC2007/ImageSets/Segmentation/train.txt"
+  val_split: "data/WHDLD/VOCdevkit_9880/VOC2007/ImageSets/Segmentation/val.txt"
+  num_classes: 6
+  ignore_index: 255
+  patch_size: 256
+
+preprocessing:
+  histogram_matching: true
+
+# Default model (used as fallback when architecture is not specified)
+model:
+  architecture: "DeepLabV3Plus"
+  encoder: "resnet50"
+  pretrained: true
+
+training:
+  epochs: 100
+  batch_size: 8
+  accum_steps: 1
+  optimizer: "AdamW"
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  scheduler: "CosineAnnealingLR"
+  num_workers: 4
+  amp: true
+  early_stop_patience: 20
+  grad_clip: 1.0
+
+# ── Exp1: Point density — run for EVERY model below ──
+experiment1:
+  name: "point_density"
+  points_per_class: [10, 20, 30, 40, 50]
+  loss: "pce"
+  seeds: [42, 123, 456]
+
+# ── Exp2: Loss comparison — run for EVERY model below ──
+# Uses best pts/class per model from Exp1 (no fixed points_per_class)
+experiment2:
+  name: "loss_comparison"
+  losses:
+    - "pce"
+    - "pce_focal_g2"
+    - "pce_focal_g3"
+    - "pce_weighted"
+  seeds: [42, 123, 456]
+
+baseline:
+  name: "full_supervision"
+  loss: "full_supervision"
+  seeds: [42]
+
+# ── Architectures — used in Exp1, Exp2, and final ensemble ──
+ensemble:
+  models:
+    - architecture: "DeepLabV3Plus"
+      encoder: "resnet50"
+      name: "deeplabv3plus_resnet50"
+    - architecture: "Unet"
+      encoder: "resnet50"
+      name: "unet_resnet50"
+    - architecture: "FPN"
+      encoder: "resnet50"
+      name: "fpn_resnet50"
+  use_tta: true
+
+# ── Self-training — applied inside every Exp1/Exp2 run ──
+semi_supervised:
+  n_iterations: 2
+  thresholds: [0.95, 0.90]
+
+# ── Final step ──
+# Loads each model's best checkpoint (best pts + best loss from Exp1/Exp2)
+# and ensembles them for inference. No training.
+# Run: python src/run_experiments.py --experiment final_ensemble

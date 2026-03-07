@@ -1,0 +1,12 @@
+data/
+experiments/
+visualizations/
+__pycache__/
+*.pyc
+*.pyo
+.ipynb_checkpoints/
+*.pth
+*.pt
+Thumbs.db
+.vscode/
+.idea/

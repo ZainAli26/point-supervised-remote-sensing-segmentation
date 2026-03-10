@@ -35,7 +35,7 @@ python src/run_experiments.py
 ### Setup
 
 ```python
-!git clone https://github.com/YOUR_USERNAME/point-supervised-remote-sensing-segmentation.git
+!git clone https://github.com/ZainAli26/point-supervised-remote-sensing-segmentation.git
 %cd point-supervised-remote-sensing-segmentation
 !pip install -r requirements.txt
 !cp configs/config_colab.yaml configs/config.yaml

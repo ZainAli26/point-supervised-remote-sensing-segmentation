@@ -144,9 +144,10 @@ def verify_losses():
 
     # Test 4: All variants
     print(f"\n  All variants:")
+    pred_g = pred.clone().requires_grad_(True)
     for name in ["pce", "pce_gamma0", "pce_focal_g2", "pce_focal_g3", "pce_weighted"]:
         fn = build_loss(name)
-        l = fn(pred, point_target)
+        l = fn(pred_g, point_target)
         l.backward(retain_graph=True)
         print(f"    {name:20s} → loss={l.item():.4f} ✓")
 

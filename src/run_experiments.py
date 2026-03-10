@@ -115,10 +115,11 @@ def run_single_experiment(cfg, architecture, encoder, num_points,
 # BASELINE — full supervision (each architecture)
 # ============================================================
 
-def run_baseline(cfg):
+def run_baseline(cfg, model_name=None):
     print("\n" + "=" * 60 + "\n  BASELINE: Full Supervision\n" + "=" * 60)
 
-    models = cfg['ensemble']['models']
+    models = _get_model_configs(cfg, model_name)
+    all_names = [m['name'] for m in cfg['ensemble']['models']]
     seed = cfg['baseline']['seeds'][0]
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     patch = cfg['data']['patch_size']
@@ -156,11 +157,15 @@ def run_baseline(cfg):
                           f"baseline_{name}")
         _, metrics = trainer.fit(train_loader, val_loader)
         results[name] = metrics
+        _save_per_model_result("baseline", name, {
+            k: v for k, v in metrics.items() if k != 'confusion_matrix'})
         print(f"    mIoU: {metrics['mIoU']:.2f}%")
 
-    with open("experiments/baseline_results.json", 'w') as f:
-        json.dump({n: {k: v for k, v in m.items() if k != 'confusion_matrix'}
-                   for n, m in results.items()}, f, indent=2)
+    # Merge all available baseline results
+    all_saved = _load_per_model_results("baseline", all_names)
+    if all_saved:
+        with open("experiments/baseline_results.json", 'w') as f:
+            json.dump(all_saved, f, indent=2)
     return results
 
 
@@ -836,7 +841,7 @@ if __name__ == "__main__":
                   f"after all models are complete.")
 
         elif args.experiment == "baseline":
-            run_baseline(cfg)
+            run_baseline(cfg, model_name=args.model)
 
         elif args.experiment == "point_density":
             run_point_density_study(cfg, model_name=args.model)

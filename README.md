@@ -59,7 +59,7 @@ python src/run_experiments.py --experiment point_density --model unet_resnet50
 python src/run_experiments.py --experiment point_density --model fpn_resnet50
 
 # Step 3: Loss comparison (auto-loads best pts from step 2)
-python src/run_experiments.py --experiment loss_comparison --model deeplabv3plus_resnet50
+python src/run_experiments.py --experiment loss_comparison  --model deeplabv3plus_resnet50
 python src/run_experiments.py --experiment loss_comparison --model unet_resnet50
 python src/run_experiments.py --experiment loss_comparison --model fpn_resnet50
 

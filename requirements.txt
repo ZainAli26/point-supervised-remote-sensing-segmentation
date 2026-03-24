@@ -10,3 +10,4 @@ opencv-python
 tqdm
 pyyaml
 gdown
+kagglehub

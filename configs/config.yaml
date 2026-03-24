@@ -1,10 +1,3 @@
-# ============================================================
-# Configuration — Local GPU (RTX 3070 6GB)
-# ============================================================
-# pCE Formula (from assignment slides):
-#   pCE = Sigma(FocalLoss(pred, GT) x MASK_labeled) / Sigma(MASK_labeled)
-# ============================================================
-
 data:
   dataset_name: "WHDLD"
   data_root: "data/WHDLD/VOCdevkit_9880/VOC2007"
@@ -22,18 +15,18 @@ preprocessing:
 # Default model (used as fallback when architecture is not specified)
 model:
   architecture: "DeepLabV3Plus"
-  encoder: "resnet34"
+  encoder: "resnet50"
   pretrained: true
 
 training:
-  epochs: 80
-  batch_size: 2
-  accum_steps: 4
+  epochs: 100
+  batch_size: 64
+  accum_steps: 1
   optimizer: "AdamW"
   learning_rate: 0.0001
   weight_decay: 0.0001
   scheduler: "CosineAnnealingLR"
-  num_workers: 2
+  num_workers: 4
   amp: true
   early_stop_patience: 20
   grad_clip: 1.0
@@ -54,7 +47,7 @@ experiment2:
     - "pce_focal_g2"
     - "pce_focal_g3"
     - "pce_weighted"
-  seeds: [42, 123, 456]
+  seeds: [42]
 
 baseline:
   name: "full_supervision"
@@ -65,14 +58,14 @@ baseline:
 ensemble:
   models:
     - architecture: "DeepLabV3Plus"
-      encoder: "resnet34"
-      name: "deeplabv3plus_resnet34"
+      encoder: "resnet50"
+      name: "deeplabv3plus_resnet50"
     - architecture: "Unet"
-      encoder: "resnet34"
-      name: "unet_resnet34"
+      encoder: "resnet50"
+      name: "unet_resnet50"
     - architecture: "FPN"
-      encoder: "resnet34"
-      name: "fpn_resnet34"
+      encoder: "resnet50"
+      name: "fpn_resnet50"
   use_tta: true
 
 # ── Self-training — applied inside every Exp1/Exp2 run ──

@@ -312,7 +312,7 @@ def run_point_density_study(cfg, model_name=None):
 # LOSS COMPARISON (per-model, results saved independently)
 # ============================================================
 
-def run_loss_comparison(cfg, best_pts_per_model, model_name=None):
+def run_loss_comparison(cfg, best_pts_per_model, model_name=None, loss_name_filter=None):
     """
     Run loss function comparison. If model_name is given, only that model runs.
     Each model's results are saved to experiments/loss_comparison_<model>.json
@@ -320,6 +320,12 @@ def run_loss_comparison(cfg, best_pts_per_model, model_name=None):
     """
     models = _get_model_configs(cfg, model_name)
     e = cfg['experiment2']
+    if loss_name_filter:
+        if loss_name_filter not in e['losses']:
+            print(f"  ERROR: Unknown loss '{loss_name_filter}'. "
+                  f"Available: {e['losses']}")
+            sys.exit(1)
+        e = {**e, 'losses': [loss_name_filter]}
     all_names = [m['name'] for m in cfg['ensemble']['models']]
 
     scope = models[0]['name'] if model_name else "All Models"
@@ -811,6 +817,9 @@ if __name__ == "__main__":
                         help="Run only this model (e.g. deeplabv3plus_resnet50, "
                              "unet_resnet50, fpn_resnet50). "
                              "Omit to run all models.")
+    parser.add_argument("--loss", default=None,
+                        help="Run only this loss (e.g. pce, pce_focal_g2). "
+                             "Only applies to loss_comparison experiment.")
     parser.add_argument("--config", default="configs/config.yaml",
                         help="Path to config YAML (default: configs/config.yaml). "
                              "Use configs/config_colab.yaml on Colab.")
@@ -836,7 +845,8 @@ if __name__ == "__main__":
             # (point_density + loss_comparison for that model only)
             run_point_density_study(cfg, model_name=args.model)
             best_pts = _load_best_pts(cfg)
-            run_loss_comparison(cfg, best_pts, model_name=args.model)
+            run_loss_comparison(cfg, best_pts, model_name=args.model,
+                               loss_name_filter=args.loss)
             print(f"\n  Done: {args.model}. Run --experiment final_ensemble "
                   f"after all models are complete.")
 
@@ -855,7 +865,8 @@ if __name__ == "__main__":
                 print(f"  Loaded best_pts: {best_pts}")
             else:
                 print(f"  No point density results found, using default pts=10")
-            run_loss_comparison(cfg, best_pts, model_name=args.model)
+            run_loss_comparison(cfg, best_pts, model_name=args.model,
+                               loss_name_filter=args.loss)
 
         elif args.experiment == "final_ensemble":
             best_pts, best_loss, best_ckpts = _load_best_settings(cfg)
